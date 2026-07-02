@@ -241,6 +241,7 @@ func showStatus() {
 
     // ANSI Escape Codes for formatting
     let greenColor = "\u{001B}[32m"
+    let redColor = "\u{001B}[31m"
     let resetColor = "\u{001B}[0m"
 
     print("Audio Output: \(defaultName)")
@@ -250,11 +251,10 @@ func showStatus() {
         // Wrap state in green brackets
         print("AirPods Audio: \(greenColor)[\(stateStr)]\(resetColor)")
         for d in airPodsAudio {
-            let marker = d.id == defaultID ? " <<" : ""
-            print("  \(d.name)\(marker)")
+            print("  \(d.name)")
         }
     } else {
-        print("AirPods Audio: not found")
+        print("AirPods Audio: \(redColor)not found\(resetColor)")
     }
 
     if let bt = airPodsBT {
@@ -278,8 +278,7 @@ func showStatus() {
     }
 
     if let builtIn {
-        let isActive = builtIn.id == defaultID
-        print("Built-in: \(builtIn.name)\(isActive ? " <<" : "")")
+        print("Built-in: \(builtIn.name)")
     }
 }
 
@@ -463,14 +462,12 @@ func runToggle() {
 
 func runList() {
     print("=== Audio Devices ===")
-    let defaultID = getDefaultOutputDevice()
     let audioList: [AudioDeviceInfo] = getAllAudioDevices().compactMap { id in
         guard let name = getDeviceName(id), deviceHasOutput(id) else { return nil }
         return AudioDeviceInfo(id: id, name: name, isOutput: true)
     }
     for d in audioList {
-        let marker = d.id == defaultID ? " <<" : ""
-        print("  \(d.name)\(marker)")
+        print("  \(d.name)")
     }
 
     print("\n=== Bluetooth Devices ===")
