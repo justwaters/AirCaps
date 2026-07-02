@@ -216,6 +216,20 @@ func consolidateBatteries(_ input: [(device: String, levels: [String: Int])]) ->
     return merged.map { ($0.key, $0.value) }
 }
 
+func colorizedBatteryPercentage(_ val: Int) -> String {
+    let reset = "\u{001B}[0m"
+    if val <= 20 {
+        let red = "\u{001B}[31m"
+        return "\(red)\(val)%\(reset)"
+    } else if val <= 80 {
+        let yellow = "\u{001B}[33m"
+        return "\(yellow)\(val)%\(reset)"
+    } else {
+        let green = "\u{001B}[32m"
+        return "\(green)\(val)%\(reset)"
+    }
+}
+
 // MARK: - Status
 
 func showStatus() {
@@ -225,10 +239,16 @@ func showStatus() {
     let airPodsBT = findAirPodsBluetoothDevice()
     let builtIn = findBuiltInOutput()
 
+    // ANSI Escape Codes for formatting
+    let greenColor = "\u{001B}[32m"
+    let resetColor = "\u{001B}[0m"
+
     print("Audio Output: \(defaultName)")
     if !airPodsAudio.isEmpty {
         let active = airPodsAudio.contains { $0.id == defaultID }
-        print("AirPods Audio: \(active ? "active" : "available")")
+        let stateStr = active ? "active" : "available"
+        // Wrap state in green brackets
+        print("AirPods Audio: \(greenColor)[\(stateStr)]\(resetColor)")
         for d in airPodsAudio {
             let marker = d.id == defaultID ? " <<" : ""
             print("  \(d.name)\(marker)")
@@ -239,7 +259,9 @@ func showStatus() {
 
     if let bt = airPodsBT {
         let connected = bt.isConnected()
-        print("Bluetooth: \(connected ? "connected" : "paired") (\(bt.name ?? "?"))")
+        let stateStr = connected ? "connected" : "paired"
+        // Wrap state in green brackets
+        print("Bluetooth: \(greenColor)[\(stateStr)]\(resetColor) (\(bt.name ?? "?"))")
         print("  Address: \(bt.addressString ?? "?")")
     } else {
         print("Bluetooth: no AirPods paired")
@@ -250,7 +272,7 @@ func showStatus() {
         if bat.device.localizedCaseInsensitiveContains("AirPods") {
             print("Battery:")
             for (key, val) in bat.levels {
-                print("  \(key.capitalized): \(val)%")
+                print("  \(key.capitalized): \(colorizedBatteryPercentage(val))")
             }
         }
     }
@@ -463,7 +485,7 @@ func runList() {
         for bat in batteries {
             print("  \(bat.device):")
             for (key, val) in bat.levels {
-                print("    \(key.capitalized): \(val)%")
+                print("    \(key.capitalized): \(colorizedBatteryPercentage(val))")
             }
         }
     }
