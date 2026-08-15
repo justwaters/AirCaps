@@ -1,4 +1,4 @@
-# AirpodsCTL
+# AirCaps
 
 macOS CLI tool to switch AirPods Pro noise control modes and manage audio output. Includes an optional [menu-bar app](#menu-bar-app) that lets you toggle noise mode with the Caps Lock key.
 
@@ -12,12 +12,12 @@ macOS CLI tool to switch AirPods Pro noise control modes and manage audio output
 ## Installation
 
 ```bash
-git clone https://github.com/your-username/airpodsctl.git
-cd airpodsctl
+git clone https://github.com/justwaters/AirCaps.git
+cd AirCaps
 make install
 ```
 
-This builds a release binary and copies it to `/usr/local/bin/airpodsctl`.
+This builds a release binary and copies it to `/usr/local/bin/aircaps`.
 
 ## Build
 
@@ -39,7 +39,7 @@ make uninstall   # remove from /usr/local/bin
 ## Usage
 
 ```
-airpodsctl [command]
+aircaps [command]
 ```
 
 ### Commands
@@ -61,22 +61,22 @@ If no command is given, `status` is the default.
 
 ```bash
 # Check AirPods status and battery
-airpodsctl status
+aircaps status
 
 # Switch audio to AirPods
-airpodsctl on
+aircaps on
 
 # Enable noise cancellation
-airpodsctl ANC
+aircaps ANC
 
 # Enable adaptive mode
-airpodsctl AT
+aircaps AT
 
 # Enable transparency mode
-airpodsctl TR
+aircaps TR
 
 # Toggle back to built-in speakers
-airpodsctl off
+aircaps off
 ```
 
 ## How it works
@@ -106,14 +106,14 @@ The noise mode commands (`ANC`, `AT`, `TR`) require Accessibility access. On fir
 
 1. Open **System Settings → Privacy & Security → Accessibility**
 2. Click the '+' button and add Terminal (or your terminal emulator)
-3. If using the binary directly, add `/usr/local/bin/airpodsctl` (you may need to add your terminal and run from there)
+3. If using the binary directly, add `/usr/local/bin/aircaps` (you may need to add your terminal and run from there)
 
 The audio and status commands (`on`, `off`, `toggle`, `status`, `list`) do not require accessibility permissions.
 
 ## Project Structure
 
 ```
-AirpodsCTL/
+AirCaps/
 ├── Package.swift          # SPM package manifest (3 targets)
 ├── Makefile                # Build/install targets, incl. menu-bar app bundling
 ├── Packaging/
@@ -127,13 +127,13 @@ AirpodsCTL/
 │   │   ├── CoreError.swift
 │   │   ├── NoiseControl.swift
 │   │   └── Permissions.swift
-│   ├── airpodsctl/          # CLI — thin wrapper around AirPodsCore
+│   ├── aircaps/              # CLI — thin wrapper around AirPodsCore
 │   │   └── main.swift
-│   └── AirpodsCTLApp/       # Menu-bar app (see below), target named "…App" to
-│       │                    # avoid colliding with Sources/airpodsctl/ on
+│   └── AirCapsApp/          # Menu-bar app (see below), target named "…App" to
+│       │                    # avoid colliding with Sources/aircaps/ on
 │       │                    # case-insensitive filesystems — the app itself is
-│       │                    # still named "AirpodsCTL" (see Packaging/Info.plist)
-│       ├── AirpodsCTLApp.swift
+│       │                    # still named "AirCaps" (see Packaging/Info.plist)
+│       ├── AirCapsApp.swift
 │       ├── CapsLockController.swift
 │       ├── MenuContent.swift
 │       ├── NoiseModeController.swift
@@ -151,7 +151,7 @@ AirpodsCTL/
 
 ## Menu Bar App
 
-`AirpodsCTL.app` is a persistent menu-bar app built on the same `AirPodsCore` logic as the CLI. It repurposes the physical **Caps Lock key** as a hardware toggle for AirPods noise mode:
+`AirCaps.app` is a persistent menu-bar app built on the same `AirPodsCore` logic as the CLI. It repurposes the physical **Caps Lock key** as a hardware toggle for AirPods noise mode:
 
 - **LED on** → Noise Cancellation
 - **LED off** → Adaptive or Transparency, whichever you pick in Settings
@@ -194,6 +194,6 @@ make bundle-install
 make bundle-uninstall
 ```
 
-Launch `AirpodsCTL.app` from `/Applications` (or Spotlight) — it runs as a menu-bar-only app with no Dock icon. Open its **Settings…** to choose Adaptive vs. Transparency for the LED-off state and to enable Launch at Login.
+Launch `AirCaps.app` from `/Applications` (or Spotlight) — it runs as a menu-bar-only app with no Dock icon. Open its **Settings…** to choose Adaptive vs. Transparency for the LED-off state and to enable Launch at Login.
 
 Note: ad-hoc code signing means Accessibility/Input Monitoring grants may need to be re-approved after each `make bundle` rebuild, since the code identity changes per build. Fine for personal use.

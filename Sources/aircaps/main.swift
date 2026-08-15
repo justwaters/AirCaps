@@ -197,7 +197,7 @@ func runSetNoiseMode(_ shortName: String) {
 }
 
 func printUsage() {
-    print("Usage: airpodsctl [command]")
+    print("Usage: aircaps [command]")
     print()
     print("Commands:")
     print("  status          Show AirPods connection and audio status (default)")

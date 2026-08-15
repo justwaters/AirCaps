@@ -62,7 +62,7 @@ struct MenuBarIcon: View {
 }
 
 @main
-struct AirpodsCTLApp: App {
+struct AirCapsApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
 
     var body: some Scene {

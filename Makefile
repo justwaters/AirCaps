@@ -1,6 +1,6 @@
-BINARY = airpodsctl
-MENUBAR_TARGET = AirpodsCTLApp
-APP_NAME = AirpodsCTL
+BINARY = aircaps
+MENUBAR_TARGET = AirCapsApp
+APP_NAME = AirCaps
 MENUBAR_APP = $(APP_NAME).app
 BUILD_DIR = .build
 
