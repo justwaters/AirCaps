@@ -3,8 +3,10 @@ MENUBAR_TARGET = AirCapsApp
 APP_NAME = AirCaps
 MENUBAR_APP = $(APP_NAME).app
 BUILD_DIR = .build
+DMG_NAME = $(APP_NAME).dmg
+DMG_STAGING = .dmg-staging
 
-.PHONY: all build clean install uninstall release bundle bundle-install bundle-uninstall
+.PHONY: all build clean install uninstall release bundle bundle-install bundle-uninstall dmg
 
 all: build
 
@@ -42,3 +44,13 @@ bundle-install: bundle
 
 bundle-uninstall:
 	rm -rf /Applications/$(MENUBAR_APP)
+
+# Packages the .app bundle into a distributable .dmg with a symlink to
+# /Applications, for attaching to GitHub releases.
+dmg: bundle
+	rm -rf $(DMG_STAGING) $(DMG_NAME)
+	mkdir -p $(DMG_STAGING)
+	cp -R $(MENUBAR_APP) $(DMG_STAGING)/
+	ln -s /Applications $(DMG_STAGING)/Applications
+	hdiutil create -volname $(APP_NAME) -srcfolder $(DMG_STAGING) -ov -format UDZO $(DMG_NAME)
+	rm -rf $(DMG_STAGING)
