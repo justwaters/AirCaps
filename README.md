@@ -139,7 +139,8 @@ AirCaps/
 │       ├── NoiseModeController.swift
 │       ├── PermissionsGate.swift
 │       ├── SettingsStore.swift
-│       └── SettingsView.swift
+│       ├── SettingsView.swift
+│       └── UpdateChecker.swift
 └── README.md
 ```
 
@@ -195,5 +196,9 @@ make bundle-uninstall
 ```
 
 Launch `AirCaps.app` from `/Applications` (or Spotlight) — it runs as a menu-bar-only app with no Dock icon. Open its **Settings…** to choose Adaptive vs. Transparency for the LED-off state and to enable Launch at Login.
+
+### Updates
+
+The menu's **Check for Updates…** item queries the GitHub Releases API on demand and, if a newer tagged version is out, offers to open its release page for you to download. There's no background polling or automatic install — checking only happens when you click it.
 
 Note: ad-hoc code signing means Accessibility/Input Monitoring grants may need to be re-approved after each `make bundle` rebuild, since the code identity changes per build. Fine for personal use.

@@ -7,6 +7,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let capsLock = CapsLockController()
     let settings = SettingsStore()
     let permissions = PermissionsGate()
+    let updateChecker = UpdateChecker()
     private(set) lazy var noiseMode = NoiseModeController(
         capsLock: capsLock,
         offMode: { [weak self] in self?.settings.offMode.asNoiseMode ?? .adaptive }
@@ -70,7 +71,8 @@ struct AirCapsApp: App {
             MenuContent(
                 noiseMode: appDelegate.noiseMode,
                 settings: appDelegate.settings,
-                permissions: appDelegate.permissions
+                permissions: appDelegate.permissions,
+                updateChecker: appDelegate.updateChecker
             )
         } label: {
             MenuBarIcon(noiseMode: appDelegate.noiseMode)

@@ -6,6 +6,7 @@ struct MenuContent: View {
     @ObservedObject var noiseMode: NoiseModeController
     @ObservedObject var settings: SettingsStore
     @ObservedObject var permissions: PermissionsGate
+    @ObservedObject var updateChecker: UpdateChecker
 
     @State private var audioOutputName = "—"
     @State private var audioError: String?
@@ -51,6 +52,11 @@ struct MenuContent: View {
                 NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
             }
             .keyboardShortcut(",")
+
+            Button(updateChecker.isChecking ? "Checking for Updates…" : "Check for Updates…") {
+                updateChecker.checkForUpdates()
+            }
+            .disabled(updateChecker.isChecking)
 
             Button("Quit") { NSApp.terminate(nil) }
                 .keyboardShortcut("q")
