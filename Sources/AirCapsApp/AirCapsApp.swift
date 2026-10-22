@@ -10,7 +10,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let updateChecker = UpdateChecker()
     private(set) lazy var noiseMode = NoiseModeController(
         capsLock: capsLock,
-        offMode: { [weak self] in self?.settings.offMode.asNoiseMode ?? .adaptive }
+        offMode: { [weak self] in self?.settings.offMode.asNoiseMode ?? .adaptive },
+        backend: { [weak self] in (self?.settings.backendChoice ?? .hal).backend }
     )
     private var cancellables = Set<AnyCancellable>()
 
@@ -22,8 +23,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // remap is still active, stop() reverts it immediately rather than
         // leaving Caps Lock dead with nothing listening to reactivate it.
         // Both start()/stop() are idempotent, safe to call redundantly.
-        Publishers.CombineLatest(permissions.$accessibility, permissions.$inputMonitoring)
-            .sink { [weak self] _, _ in
+        settings.$backendChoice
+            .sink { [weak self] choice in
+                self?.permissions.accessibilityRequired = choice.backend.requiresAccessibility
+            }
+            .store(in: &cancellables)
+
+        Publishers.CombineLatest3(
+            permissions.$accessibility, permissions.$inputMonitoring, permissions.$accessibilityRequired
+        )
+            .sink { [weak self] _, _, _ in
                 guard let self else { return }
                 if self.permissions.allGranted {
                     self.capsLock.start()

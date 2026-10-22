@@ -17,8 +17,12 @@ public final class PermissionsGate: ObservableObject {
     @Published public private(set) var accessibility: PermissionState = .unknown
     @Published public private(set) var inputMonitoring: PermissionState = .unknown
 
+    /// Whether the active noise-control backend needs Accessibility. When false,
+    /// Accessibility state is ignored for gating Caps Lock control.
+    @Published public var accessibilityRequired = true
+
     public var allGranted: Bool {
-        accessibility == .granted && inputMonitoring == .granted
+        (!accessibilityRequired || accessibility == .granted) && inputMonitoring == .granted
     }
 
     public init() {

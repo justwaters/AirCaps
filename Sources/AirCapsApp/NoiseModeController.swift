@@ -37,12 +37,12 @@ public final class NoiseModeController: ObservableObject {
     private var lastTransitionEnd = Date.distantPast
     private let debounceInterval: TimeInterval = 0.3
 
-    private let backend: any NoiseControlBackend
+    private let backend: () -> any NoiseControlBackend
 
     public init(
         capsLock: CapsLockController,
         offMode: @escaping () -> NoiseMode,
-        backend: any NoiseControlBackend = AXControlCenterBackend()
+        backend: @escaping () -> any NoiseControlBackend = { AXControlCenterBackend() }
     ) {
         self.capsLock = capsLock
         self.offMode = offMode
@@ -70,6 +70,7 @@ public final class NoiseModeController: ObservableObject {
         lastError = nil
         // LED intentionally holds the last confirmed state until the transition commits.
 
+        let backend = backend()
         Task {
             let result = backend.setMode(target.rawValue)
             self.finish(result: result, current: current, target: target)

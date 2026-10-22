@@ -17,6 +17,15 @@ struct SettingsView: View {
                 .pickerStyle(.radioGroup)
             }
 
+            Section("Backend") {
+                Picker("Switch noise mode using:", selection: $settings.backendChoice) {
+                    ForEach(BackendChoice.allCases, id: \.self) { choice in
+                        Text(choice.displayName).tag(choice)
+                    }
+                }
+                .pickerStyle(.radioGroup)
+            }
+
             Section("Startup") {
                 Toggle("Launch at Login", isOn: $launchAtLoginEnabled)
                     .onChange(of: launchAtLoginEnabled) { newValue in
@@ -33,7 +42,10 @@ struct SettingsView: View {
             }
 
             Section("Permissions") {
-                permissionRow("Accessibility", state: permissions.accessibility) {
+                permissionRow(
+                    permissions.accessibilityRequired ? "Accessibility" : "Accessibility (not needed)",
+                    state: permissions.accessibility
+                ) {
                     permissions.requestAccessibility()
                 }
                 permissionRow("Input Monitoring", state: permissions.inputMonitoring) {

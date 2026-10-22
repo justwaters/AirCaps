@@ -82,7 +82,7 @@ struct MenuContent: View {
     private var permissionsWarning: some View {
         VStack(alignment: .leading, spacing: 4) {
             Text("Permissions needed for Caps Lock control").bold()
-            if permissions.accessibility != .granted {
+            if permissions.accessibilityRequired && permissions.accessibility != .granted {
                 Button("Grant Accessibility…") { permissions.requestAccessibility() }
             }
             if permissions.inputMonitoring != .granted {
