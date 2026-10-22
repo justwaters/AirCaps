@@ -11,9 +11,11 @@ public enum CoreError: Error, CustomStringConvertible, Sendable {
     case popoverTimeout
     case disclosureTriangleNotFound
     case checkboxNotFound(String)
+    case backendFailed(String)
 
     public var description: String {
         switch self {
+        case .backendFailed(let message): return message
         case .noAirPodsAudioDevice: return "No AirPods audio device found"
         case .noBuiltInOutput: return "No built-in output found"
         case .audioSwitchFailed: return "Failed to switch audio output"

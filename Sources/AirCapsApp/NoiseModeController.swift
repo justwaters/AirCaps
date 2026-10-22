@@ -37,9 +37,16 @@ public final class NoiseModeController: ObservableObject {
     private var lastTransitionEnd = Date.distantPast
     private let debounceInterval: TimeInterval = 0.3
 
-    public init(capsLock: CapsLockController, offMode: @escaping () -> NoiseMode) {
+    private let backend: any NoiseControlBackend
+
+    public init(
+        capsLock: CapsLockController,
+        offMode: @escaping () -> NoiseMode,
+        backend: any NoiseControlBackend = AXControlCenterBackend()
+    ) {
         self.capsLock = capsLock
         self.offMode = offMode
+        self.backend = backend
         capsLock.onCapsLockPressed = { [weak self] in
             self?.handleCapsLockPressed()
         }
@@ -64,7 +71,7 @@ public final class NoiseModeController: ObservableObject {
         // LED intentionally holds the last confirmed state until the transition commits.
 
         Task {
-            let result = AirPodsCore.setNoiseMode(target.rawValue)
+            let result = backend.setMode(target.rawValue)
             self.finish(result: result, current: current, target: target)
         }
     }

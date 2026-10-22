@@ -166,10 +166,10 @@ func runList() {
     }
 }
 
-func runSetNoiseMode(_ shortName: String) {
-    ensureAXPermissions()
+func runSetNoiseMode(_ shortName: String, backend: any NoiseControlBackend) {
+    if backend.requiresAccessibility { ensureAXPermissions() }
 
-    switch setNoiseMode(shortName) {
+    switch backend.setMode(shortName) {
     case .success(let targetMode):
         print("Noise mode set to \(shortName) (\(targetMode))")
     case .failure(.unknownNoiseMode(let mode)):
@@ -208,6 +208,10 @@ func printUsage() {
     print("  ANC             Set noise control to Active Noise Cancellation")
     print("  AT              Set noise control to Adaptive Transparency")
     print("  TR              Set noise control to Transparency")
+    print()
+    print("Options (noise control commands):")
+    print("  --backend ax|hal   ax: Control Center via Accessibility (default)")
+    print("                     hal: CoreAudio private property, no Accessibility needed")
 }
 
 // MARK: - Main
@@ -219,7 +223,19 @@ case "ON": runOn()
 case "OFF": runOff()
 case "TOGGLE": runToggle()
 case "LIST": runList()
-case "ANC", "AT", "TR": runSetNoiseMode(command.uppercased())
+case "ANC", "AT", "TR":
+    var backend: any NoiseControlBackend = AXControlCenterBackend()
+    let args = Array(CommandLine.arguments.dropFirst(2))
+    if let i = args.firstIndex(of: "--backend") {
+        switch args.dropFirst(i + 1).first?.lowercased() {
+        case "ax": break
+        case "hal": backend = HALListeningModeBackend()
+        default:
+            printerr("--backend must be 'ax' or 'hal'")
+            exit(1)
+        }
+    }
+    runSetNoiseMode(command.uppercased(), backend: backend)
 case "-H", "--HELP", "HELP": printUsage()
 default:
     printerr("Unknown command: \(command)")
