@@ -24,19 +24,9 @@ public struct HALListeningModeBackend: NoiseControlBackend {
             return .failure(.noAirPodsAudioDevice)
         }
 
-        // Try each scope the property might live on; use the first one the device exposes.
-        let scopes = [kAudioObjectPropertyScopeGlobal, kAudioDevicePropertyScopeOutput]
-        guard let address = scopes
-            .map({ AudioObjectPropertyAddress(
-                mSelector: Self.listeningModeSelector,
-                mScope: $0,
-                mElement: kAudioObjectPropertyElementMain) })
-            .first(where: { var a = $0; return AudioObjectHasProperty(device.id, &a) })
-        else {
+        guard var addr = Self.propertyAddress(for: device.id) else {
             return .failure(.backendFailed("AirPods do not expose a listening-mode property"))
         }
-
-        var addr = address
         var settable: DarwinBoolean = false
         guard AudioObjectIsPropertySettable(device.id, &addr, &settable) == noErr, settable.boolValue else {
             return .failure(.backendFailed("Listening-mode property is not settable"))
@@ -55,6 +45,29 @@ public struct HALListeningModeBackend: NoiseControlBackend {
             RunLoop.current.run(until: Date().addingTimeInterval(0.05))
         }
         return .failure(.backendFailed("Listening mode did not change to \(name)"))
+    }
+
+    /// Whether an AirPods audio output is currently present.
+    public static func isAirPodsConnected() -> Bool {
+        !findAudioDevices(matching: "AirPods").isEmpty
+    }
+
+    /// The AirPods' current listening mode as "ANC"/"TR"/"AT", or nil when
+    /// nothing is connected, the property can't be read, or the mode is Off.
+    public static func currentShortName() -> String? {
+        guard let device = findAudioDevices(matching: "AirPods").first,
+              var addr = propertyAddress(for: device.id),
+              let raw = read(device.id, &addr)
+        else { return nil }
+        return rawValues.first(where: { $0.value == raw })?.key
+    }
+
+    /// The scope the property lives on for this device, if it exposes it at all.
+    private static func propertyAddress(for device: AudioDeviceID) -> AudioObjectPropertyAddress? {
+        [kAudioObjectPropertyScopeGlobal, kAudioDevicePropertyScopeOutput]
+            .map { AudioObjectPropertyAddress(
+                mSelector: listeningModeSelector, mScope: $0, mElement: kAudioObjectPropertyElementMain) }
+            .first { var a = $0; return AudioObjectHasProperty(device, &a) }
     }
 
     private static func read(_ device: AudioDeviceID, _ address: inout AudioObjectPropertyAddress) -> UInt32? {
