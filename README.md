@@ -221,6 +221,6 @@ Launch `AirCaps.app` from `/Applications` (or Spotlight) — it runs as a menu-b
 
 ### Updates
 
-The menu's **Check for Updates…** item queries the GitHub Releases API on demand and, if a newer tagged version is out, offers to open its release page for you to download. There's no background polling or automatic install — checking only happens when you click it.
+The menu's **Check for Updates…** item queries the GitHub Releases API on demand and, if a newer tagged version is out, offers to **Install Update** (or open the release page). Installing downloads `AirCaps.dmg`, checks it is AirCaps at the expected version, quits the app, swaps the bundle in place and relaunches it. It needs write access to the folder AirCaps is installed in, and macOS may ask you to grant Input Monitoring again afterwards because the app is ad-hoc signed. There's no background polling — checking only happens when you click it.
 
 Note: ad-hoc code signing means Accessibility/Input Monitoring grants may need to be re-approved after each `make bundle` rebuild, since the code identity changes per build. Fine for personal use.
