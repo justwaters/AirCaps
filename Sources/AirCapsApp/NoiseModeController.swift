@@ -1,4 +1,5 @@
 import AirPodsCore
+import CoreAudio
 import Foundation
 
 public enum NoiseMode: String, Sendable, CaseIterable {
@@ -17,6 +18,8 @@ public enum ControllerStatus: Sendable, Equatable {
     /// mode without going through the same AX popover flow used to set it, so the
     /// app doesn't know the real state until the first transition happens.
     case idle(NoiseMode?)
+    /// No AirPods audio device is connected.
+    case disconnected
     case transitioning(from: NoiseMode?, to: NoiseMode)
 }
 
@@ -37,15 +40,55 @@ public final class NoiseModeController: ObservableObject {
     private var lastTransitionEnd = Date.distantPast
     private let debounceInterval: TimeInterval = 0.3
 
-    public init(capsLock: CapsLockController, offMode: @escaping () -> NoiseMode) {
+    private let backend: () -> any NoiseControlBackend
+
+    public init(
+        capsLock: CapsLockController,
+        offMode: @escaping () -> NoiseMode,
+        backend: @escaping () -> any NoiseControlBackend = { AXControlCenterBackend() }
+    ) {
         self.capsLock = capsLock
         self.offMode = offMode
+        self.backend = backend
         capsLock.onCapsLockPressed = { [weak self] in
             self?.handleCapsLockPressed()
+        }
+        refreshFromDevice()
+        observeAudioDevices()
+    }
+
+    /// Syncs `status` (and the Caps Lock LED) with what the AirPods report.
+    /// Reading the mode goes through the CoreAudio property regardless of the
+    /// selected backend, since it needs no permission. Skipped mid-transition.
+    public func refreshFromDevice() {
+        if case .transitioning = status { return }
+        guard HALListeningModeBackend.isAirPodsConnected() else {
+            status = .disconnected
+            return
+        }
+        let mode = HALListeningModeBackend.currentShortName().flatMap(NoiseMode.init(rawValue:))
+        status = .idle(mode)
+        if let mode { capsLock.setLEDState(mode.isLEDOn ? .on : .off) }
+    }
+
+    private func observeAudioDevices() {
+        var address = AudioObjectPropertyAddress(
+            mSelector: kAudioHardwarePropertyDevices,
+            mScope: kAudioObjectPropertyScopeGlobal,
+            mElement: kAudioObjectPropertyElementMain
+        )
+        AudioObjectAddPropertyListenerBlock(
+            AudioObjectID(kAudioObjectSystemObject), &address, .main
+        ) { [weak self] _, _ in
+            // The device list changes before the AirPods' properties settle.
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+                MainActor.assumeIsolated { self?.refreshFromDevice() }
+            }
         }
     }
 
     public func handleCapsLockPressed() {
+        refreshFromDevice()
         guard case .idle(let current) = status else { return }
         guard Date().timeIntervalSince(lastTransitionEnd) > debounceInterval else { return }
         let target: NoiseMode = (current == .noiseCancellation) ? offMode() : .noiseCancellation
@@ -54,6 +97,7 @@ public final class NoiseModeController: ObservableObject {
 
     /// Manual mode change (menu action) — same debounce/failure handling as Caps Lock.
     public func requestMode(_ target: NoiseMode) {
+        refreshFromDevice()
         guard case .idle(let current) = status else { return }
         beginTransition(to: target, from: current)
     }
@@ -63,8 +107,9 @@ public final class NoiseModeController: ObservableObject {
         lastError = nil
         // LED intentionally holds the last confirmed state until the transition commits.
 
+        let backend = backend()
         Task {
-            let result = AirPodsCore.setNoiseMode(target.rawValue)
+            let result = backend.setMode(target.rawValue)
             self.finish(result: result, current: current, target: target)
         }
     }

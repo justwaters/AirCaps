@@ -10,7 +10,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let updateChecker = UpdateChecker()
     private(set) lazy var noiseMode = NoiseModeController(
         capsLock: capsLock,
-        offMode: { [weak self] in self?.settings.offMode.asNoiseMode ?? .adaptive }
+        offMode: { [weak self] in self?.settings.offMode.asNoiseMode ?? .adaptive },
+        backend: { [weak self] in (self?.settings.backendChoice ?? .hal).backend }
     )
     private var cancellables = Set<AnyCancellable>()
 
@@ -22,8 +23,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // remap is still active, stop() reverts it immediately rather than
         // leaving Caps Lock dead with nothing listening to reactivate it.
         // Both start()/stop() are idempotent, safe to call redundantly.
-        Publishers.CombineLatest(permissions.$accessibility, permissions.$inputMonitoring)
-            .sink { [weak self] _, _ in
+        settings.$backendChoice
+            .sink { [weak self] choice in
+                self?.permissions.accessibilityRequired = choice.backend.requiresAccessibility
+            }
+            .store(in: &cancellables)
+
+        Publishers.CombineLatest3(
+            permissions.$accessibility, permissions.$inputMonitoring, permissions.$accessibilityRequired
+        )
+            .sink { [weak self] _, _, _ in
                 guard let self else { return }
                 if self.permissions.allGranted {
                     self.capsLock.start()
@@ -50,15 +59,42 @@ struct MenuBarIcon: View {
     @ObservedObject var noiseMode: NoiseModeController
 
     var body: some View {
-        Image(systemName: iconName)
+        switch noiseMode.status {
+        case .idle(.some(let mode)):
+            modeImage(mode)
+        case .idle(nil):
+            Image(systemName: "airpodspro")
+        case .disconnected:
+            Image(systemName: "hand.tap")
+        case .transitioning(_, let to):
+            // Show the target mode while switching rather than a spinner glyph.
+            modeImage(to)
+        }
     }
 
-    private var iconName: String {
-        switch noiseMode.status {
-        case .idle(.some(let mode)): return mode.isLEDOn ? "ear.fill" : "waveform"
-        case .idle(nil): return "questionmark.circle"
-        case .transitioning: return "arrow.triangle.2.circlepath"
+    /// The bundled vector icon for a mode (template, so it follows the menu
+    /// bar's light/dark appearance); SF Symbol fallback when run unbundled.
+    @ViewBuilder
+    private func modeImage(_ mode: NoiseMode) -> some View {
+        if let image = Self.icon(for: mode) {
+            Image(nsImage: image)
+        } else {
+            Image(systemName: mode.isLEDOn ? "ear.fill" : "waveform")
         }
+    }
+
+    private static let iconHeight: CGFloat = 17
+    private static var cache: [NoiseMode: NSImage] = [:]
+
+    private static func icon(for mode: NoiseMode) -> NSImage? {
+        if let cached = cache[mode] { return cached }
+        guard let url = Bundle.main.url(forResource: "MenuIcon-\(mode.rawValue)", withExtension: "pdf"),
+              let image = NSImage(contentsOf: url), image.size.height > 0
+        else { return nil }
+        image.size = NSSize(width: image.size.width * iconHeight / image.size.height, height: iconHeight)
+        image.isTemplate = true
+        cache[mode] = image
+        return image
     }
 }
 

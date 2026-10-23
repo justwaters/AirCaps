@@ -63,6 +63,7 @@ struct MenuContent: View {
         }
         .onAppear {
             permissions.refresh()
+            noiseMode.refreshFromDevice()
             refreshAudioStatus()
         }
     }
@@ -74,6 +75,8 @@ struct MenuContent: View {
             Text("Noise Mode: \(mode.displayName)")
         case .idle(nil):
             Text("Noise Mode: unknown (pick one below to sync)")
+        case .disconnected:
+            Text("No AirPods connected")
         case .transitioning(_, let to):
             Text("Switching to \(to.displayName)…")
         }
@@ -82,7 +85,7 @@ struct MenuContent: View {
     private var permissionsWarning: some View {
         VStack(alignment: .leading, spacing: 4) {
             Text("Permissions needed for Caps Lock control").bold()
-            if permissions.accessibility != .granted {
+            if permissions.accessibilityRequired && permissions.accessibility != .granted {
                 Button("Grant Accessibility…") { permissions.requestAccessibility() }
             }
             if permissions.inputMonitoring != .granted {
