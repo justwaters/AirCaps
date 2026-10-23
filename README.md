@@ -11,6 +11,16 @@ macOS CLI tool to switch AirPods Pro noise control modes and manage audio output
 
 ## Installation
 
+### Homebrew (menu-bar app)
+
+```bash
+brew install --cask justwaters/tap/aircaps
+```
+
+Or download `AirCaps.dmg` from the [latest release](https://github.com/justwaters/AirCaps/releases/latest). The app is ad-hoc signed, so on first launch right-click it and choose **Open**.
+
+### From source (CLI)
+
 ```bash
 git clone https://github.com/justwaters/AirCaps.git
 cd AirCaps
@@ -189,6 +199,10 @@ The menu-bar app needs two permissions beyond what the CLI requires:
 - **Input Monitoring** — new, required for `IOHIDManager` to observe raw keyboard input. the app's menu shows a "Grant Input Monitoring…" button that opens **System Settings → Privacy & Security → Input Monitoring** when it's missing. If AirCaps isn't listed there, click **+** and add `AirCaps.app` manually.
 
 Both are re-checked every time the menu opens, so granting them mid-session (without restarting the app) works.
+
+### Hiding the menu bar icon
+
+Settings → Menu Bar → **Show menu bar icon** turns the icon off; Caps Lock keeps working. Launching AirCaps again (Spotlight or Finder) opens Settings. Menu bar managers such as Hidden Bar can also hide the icon while collapsed.
 
 ### Build & Install
 
