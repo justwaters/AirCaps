@@ -6,7 +6,20 @@ BUILD_DIR = .build
 DMG_NAME = $(APP_NAME).dmg
 DMG_STAGING = .dmg-staging
 
-.PHONY: all build clean install uninstall release bundle bundle-install bundle-uninstall dmg
+# Signing. Default is ad hoc ("-"), which works locally but is blocked by
+# Gatekeeper on other Macs. For a release, build with the Developer ID
+# identity, then notarize:
+#   make dmg SIGN_IDENTITY="Developer ID Application: Justin Waters (ZM89DBVX2V)"
+#   make notarize
+SIGN_IDENTITY ?= -
+NOTARY_PROFILE ?= AirCaps
+ifeq ($(SIGN_IDENTITY),-)
+CODESIGN_FLAGS = --force --sign -
+else
+CODESIGN_FLAGS = --force --options runtime --timestamp --sign "$(SIGN_IDENTITY)"
+endif
+
+.PHONY: all build clean install uninstall release bundle bundle-install bundle-uninstall dmg notarize
 
 all: build
 
@@ -39,7 +52,7 @@ bundle: release
 	mkdir -p $(MENUBAR_APP)/Contents/Resources
 	cp Packaging/AppIcon.icns $(MENUBAR_APP)/Contents/Resources/AppIcon.icns
 	cp Packaging/MenuIcons/*.pdf $(MENUBAR_APP)/Contents/Resources/
-	codesign --force --sign - $(MENUBAR_APP)
+	codesign $(CODESIGN_FLAGS) $(MENUBAR_APP)
 
 bundle-install: bundle
 	rm -rf /Applications/$(MENUBAR_APP)
@@ -57,3 +70,13 @@ dmg: bundle
 	ln -s /Applications $(DMG_STAGING)/Applications
 	hdiutil create -volname $(APP_NAME) -srcfolder $(DMG_STAGING) -ov -format UDZO $(DMG_NAME)
 	rm -rf $(DMG_STAGING)
+ifneq ($(SIGN_IDENTITY),-)
+	codesign --force --timestamp --sign "$(SIGN_IDENTITY)" $(DMG_NAME)
+endif
+
+# Submits the DMG to Apple's notary service and staples the ticket. Needs a
+# keychain profile created once with:
+#   xcrun notarytool store-credentials AirCaps --apple-id <id> --team-id ZM89DBVX2V
+notarize:
+	xcrun notarytool submit $(DMG_NAME) --keychain-profile $(NOTARY_PROFILE) --wait
+	xcrun stapler staple $(DMG_NAME)
