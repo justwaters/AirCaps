@@ -154,6 +154,10 @@ AirCaps/
 - **IOKit** (HID) — raw keyboard input capture and LED control (menu-bar app only)
 - **system_profiler** — battery level parsing
 
+## Custom SF Symbols
+
+`Packaging/SFSymbols/` holds the three mode icons (`aircaps.noise.cancellation`, `aircaps.adaptive`, `aircaps.transparency`) as SF Symbols custom-symbol templates. In the SF Symbols app, use **File → Import Symbol…** (or drag the SVGs in). The same artwork is used for every weight and size, so refine the Ultralight and Black masters there if you need a true weight range.
+
 ## Menu Bar App
 
 `AirCaps.app` is a persistent menu-bar app built on the same `AirPodsCore` logic as the CLI. It repurposes the physical **Caps Lock key** as a hardware toggle for AirPods noise mode:
