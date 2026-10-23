@@ -34,6 +34,9 @@ public enum BackendChoice: String, CaseIterable, Sendable {
 
 @MainActor
 public final class SettingsStore: ObservableObject {
+    /// Shared with `@AppStorage` in the app scene and the Settings view.
+    public static let showMenuBarIconKey = "showMenuBarIcon"
+
     private enum Keys {
         static let offMode = "offMode"
         static let backend = "backend"
