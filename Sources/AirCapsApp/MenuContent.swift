@@ -53,10 +53,10 @@ struct MenuContent: View {
             }
             .keyboardShortcut(",")
 
-            Button(updateChecker.isChecking ? "Checking for Updates…" : "Check for Updates…") {
+            Button(updateButtonTitle) {
                 updateChecker.checkForUpdates()
             }
-            .disabled(updateChecker.isChecking)
+            .disabled(updateChecker.isChecking || updateChecker.isInstalling)
 
             Button("Quit") { NSApp.terminate(nil) }
                 .keyboardShortcut("q")
@@ -66,6 +66,11 @@ struct MenuContent: View {
             noiseMode.refreshFromDevice()
             refreshAudioStatus()
         }
+    }
+
+    private var updateButtonTitle: String {
+        if updateChecker.isInstalling { return "Installing Update…" }
+        return updateChecker.isChecking ? "Checking for Updates…" : "Check for Updates…"
     }
 
     @ViewBuilder
