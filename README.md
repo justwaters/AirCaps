@@ -17,7 +17,7 @@ macOS CLI tool to switch AirPods Pro noise control modes and manage audio output
 brew install --cask justwaters/tap/aircaps
 ```
 
-Or download `AirCaps.dmg` from the [latest release](https://github.com/justwaters/AirCaps/releases/latest). The app is ad-hoc signed, so on first launch right-click it and choose **Open**.
+Or download `AirCaps.dmg` from the [latest release](https://github.com/justwaters/AirCaps/releases/latest). Releases from 1.3.1 on are signed with a Developer ID and notarized by Apple, so the app opens normally. (Earlier releases were ad-hoc signed: on those, use **Open Anyway** in System Settings → Privacy & Security.)
 
 ### From source (CLI)
 
@@ -204,6 +204,10 @@ Both are re-checked every time the menu opens, so granting them mid-session (wit
 
 Settings → Menu Bar → **Show menu bar icon** turns the icon off; Caps Lock keeps working. Launching AirCaps again (Spotlight or Finder) opens Settings. Menu bar managers such as Hidden Bar can also hide the icon while collapsed.
 
+### Release build
+
+`make dist` builds the release DMG: it signs the app with the Developer ID Application certificate (hardened runtime), notarizes it through Xcode's signed-in Apple ID using `Packaging/notarize.sh`, staples the ticket and packages a signed `AirCaps.dmg`. It needs Xcode signed in to the team and takes a couple of minutes while Apple processes the upload.
+
 ### Build & Install
 
 ```bash
@@ -221,6 +225,6 @@ Launch `AirCaps.app` from `/Applications` (or Spotlight) — it runs as a menu-b
 
 ### Updates
 
-The menu's **Check for Updates…** item queries the GitHub Releases API on demand and, if a newer tagged version is out, offers to **Install Update** (or open the release page). Installing downloads `AirCaps.dmg`, checks it is AirCaps at the expected version, quits the app, swaps the bundle in place and relaunches it. It needs write access to the folder AirCaps is installed in, and macOS may ask you to grant Input Monitoring again afterwards because the app is ad-hoc signed. There's no background polling — checking only happens when you click it.
+The menu's **Check for Updates…** item queries the GitHub Releases API on demand and, if a newer tagged version is out, offers to **Install Update** (or open the release page). Installing downloads `AirCaps.dmg`, checks it is AirCaps at the expected version, quits the app, swaps the bundle in place and relaunches it. It needs write access to the folder AirCaps is installed in, and macOS keeps your Input Monitoring grant across updates between Developer ID-signed releases. There's no background polling — checking only happens when you click it.
 
-Note: ad-hoc code signing means Accessibility/Input Monitoring grants may need to be re-approved after each `make bundle` rebuild, since the code identity changes per build. Fine for personal use.
+Note: local `make bundle` builds are ad-hoc signed, so Accessibility/Input Monitoring grants may need to be re-approved after each rebuild, since the code identity changes per build. Release builds (`make dist`) keep a stable Developer ID identity, so grants carry over between releases signed this way.

@@ -115,7 +115,6 @@ final class UpdateChecker: ObservableObject {
             alert.messageText = "Update Available"
             var info = "AirCaps \(version) is available (you have \(currentVersion))."
             if dmgURL != nil {
-                info += "\n\nAirCaps is ad-hoc signed, so macOS may ask you to grant Input Monitoring again after updating."
                 alert.addButton(withTitle: "Install Update")
             }
             alert.informativeText = info

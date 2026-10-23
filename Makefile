@@ -6,7 +6,19 @@ BUILD_DIR = .build
 DMG_NAME = $(APP_NAME).dmg
 DMG_STAGING = .dmg-staging
 
-.PHONY: all build clean install uninstall release bundle bundle-install bundle-uninstall dmg
+# Signing. The default is ad hoc ("-"), which works locally but is blocked by
+# Gatekeeper on other Macs. `make dist` builds the release DMG: Developer ID
+# signed (hardened runtime), notarized through Xcode's signed-in Apple ID and
+# stapled, with no extra credentials to set up.
+SIGN_IDENTITY ?= -
+DEVELOPER_ID ?= Developer ID Application: Justin Waters (ZM89DBVX2V)
+ifeq ($(SIGN_IDENTITY),-)
+CODESIGN_FLAGS = --force --sign -
+else
+CODESIGN_FLAGS = --force --options runtime --timestamp --sign "$(SIGN_IDENTITY)"
+endif
+
+.PHONY: all build clean install uninstall release bundle bundle-install bundle-uninstall dmg package dist
 
 all: build
 
@@ -39,7 +51,7 @@ bundle: release
 	mkdir -p $(MENUBAR_APP)/Contents/Resources
 	cp Packaging/AppIcon.icns $(MENUBAR_APP)/Contents/Resources/AppIcon.icns
 	cp Packaging/MenuIcons/*.pdf $(MENUBAR_APP)/Contents/Resources/
-	codesign --force --sign - $(MENUBAR_APP)
+	codesign $(CODESIGN_FLAGS) $(MENUBAR_APP)
 
 bundle-install: bundle
 	rm -rf /Applications/$(MENUBAR_APP)
@@ -50,10 +62,22 @@ bundle-uninstall:
 
 # Packages the .app bundle into a distributable .dmg with a symlink to
 # /Applications, for attaching to GitHub releases.
-dmg: bundle
+dmg: bundle package
+
+# Packages the existing $(MENUBAR_APP) without rebuilding it.
+package:
 	rm -rf $(DMG_STAGING) $(DMG_NAME)
 	mkdir -p $(DMG_STAGING)
 	cp -R $(MENUBAR_APP) $(DMG_STAGING)/
 	ln -s /Applications $(DMG_STAGING)/Applications
 	hdiutil create -volname $(APP_NAME) -srcfolder $(DMG_STAGING) -ov -format UDZO $(DMG_NAME)
 	rm -rf $(DMG_STAGING)
+ifneq ($(SIGN_IDENTITY),-)
+	codesign --force --timestamp --sign "$(SIGN_IDENTITY)" $(DMG_NAME)
+endif
+
+# Release build: signed + notarized + stapled app, packaged into a signed DMG.
+dist:
+	$(MAKE) bundle SIGN_IDENTITY="$(DEVELOPER_ID)"
+	SIGN_IDENTITY="$(DEVELOPER_ID)" Packaging/notarize.sh $(MENUBAR_APP)
+	$(MAKE) package SIGN_IDENTITY="$(DEVELOPER_ID)"
