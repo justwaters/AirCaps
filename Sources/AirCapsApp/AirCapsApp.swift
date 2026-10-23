@@ -48,6 +48,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         permissions.refresh()
     }
 
+    /// Launching AirCaps again (Spotlight, Finder, Dock) opens Settings, so the
+    /// app stays reachable when a menu bar manager has hidden its icon.
+    func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
+        NSApp.activate(ignoringOtherApps: true)
+        NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
+        return true
+    }
+
     func applicationWillTerminate(_ notification: Notification) {
         // Reverts the hidutil remap so Caps Lock resumes normal OS behavior —
         // without this, a quit-without-reboot would leave Caps Lock dead system-wide.
