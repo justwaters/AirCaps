@@ -6,7 +6,7 @@ macOS CLI tool to switch AirPods Pro noise control modes and manage audio output
 
 - macOS 13+ (Ventura or later)
 - AirPods Pro (or other AirPods with ANC/Adaptive/Transparency)
-- [Accessibility permission](#accessibility-permission) (for noise mode switching)
+- [Accessibility permission](#accessibility-permission) (for noise mode switching with the `ax` backend; not needed with `hal`)
 - Input Monitoring permission (menu-bar app only — see [Menu Bar App](#menu-bar-app))
 
 ## Installation
@@ -83,14 +83,18 @@ aircaps off
 
 ### Noise Control
 
-Noise mode switching (ANC/AT/TR) works via the macOS Accessibility API. The tool:
+Noise mode switching (ANC/AT/TR) has two backends, chosen with `--backend ax|hal` on the CLI (default `ax`) or in the menu-bar app's Settings (default CoreAudio).
+
+**`hal` — CoreAudio listening mode.** Writes the private CoreAudio property `'lstm'` on the AirPods audio device, then reads it back to confirm the mode changed. It needs no Accessibility permission. It uses an undocumented API, so a macOS update could break it. The technique comes from [pods-control](https://github.com/raulgg/pods-control) (MIT).
+
+**`ax` — Accessibility.** Uses the macOS Accessibility API. The tool:
 
 1. Opens Control Center's Sound menu bar popover
 2. Expands the AirPods section to reveal Listening Mode controls
 3. Clicks the target mode checkbox (Noise Cancellation, Adaptive, or Transparency)
 4. Closes the popover
 
-This approach is used because Apple removed the private `NoiseCore.framework` API and the L2CAP/AAP Bluetooth protocol is locked down on recent macOS versions, making BLE-based control unavailable without special permissions.
+This approach exists because Apple removed the private `NoiseCore.framework` API and the L2CAP/AAP Bluetooth protocol is locked down on recent macOS versions, making BLE-based control unavailable without special permissions.
 
 ### Audio Output
 
@@ -102,7 +106,7 @@ Battery levels are parsed from `system_profiler SPBluetoothDataType` output.
 
 ## Accessibility Permission
 
-The noise mode commands (`ANC`, `AT`, `TR`) require Accessibility access. On first run, you'll see a prompt. To grant it manually:
+The noise mode commands (`ANC`, `AT`, `TR`) require Accessibility access when run with `--backend ax`. The `hal` backend does not. On first run, you'll see a prompt. To grant it manually:
 
 1. Open **System Settings → Privacy & Security → Accessibility**
 2. Click the '+' button and add Terminal (or your terminal emulator)
@@ -177,8 +181,8 @@ hidutil property --set '{"UserKeyMapping":[]}'
 
 The menu-bar app needs two permissions beyond what the CLI requires:
 
-- **Accessibility** — same as the CLI, for the noise-mode UI automation.
-- **Input Monitoring** — new, required for `IOHIDManager` to observe raw keyboard input. macOS has no OS-native prompt for this one; the app's menu shows a "Grant Input Monitoring…" button that deep-links to **System Settings → Privacy & Security → Input Monitoring** when it's missing.
+- **Accessibility** — only when the Settings backend is "Control Center (Accessibility)". The default CoreAudio backend does not need it.
+- **Input Monitoring** — new, required for `IOHIDManager` to observe raw keyboard input. the app's menu shows a "Grant Input Monitoring…" button that opens **System Settings → Privacy & Security → Input Monitoring** when it's missing. If AirCaps isn't listed there, click **+** and add `AirCaps.app` manually.
 
 Both are re-checked every time the menu opens, so granting them mid-session (without restarting the app) works.
 

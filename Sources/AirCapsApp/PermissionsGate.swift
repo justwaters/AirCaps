@@ -45,6 +45,9 @@ public final class PermissionsGate: ObservableObject {
     }
 
     public func openInputMonitoringSettings() {
+        // macOS only lists an app in the Input Monitoring pane after it has
+        // requested access, so ask first (no-op if already decided).
+        IOHIDRequestAccess(kIOHIDRequestTypeListenEvent)
         openSystemSettings(pane: "Privacy_ListenEvent")
     }
 
