@@ -64,6 +64,7 @@ public final class NoiseModeController: ObservableObject {
         if case .transitioning = status { return }
         guard HALListeningModeBackend.isAirPodsConnected() else {
             status = .disconnected
+            capsLock.setLEDState(.off)
             return
         }
         let mode = HALListeningModeBackend.currentShortName().flatMap(NoiseMode.init(rawValue:))
