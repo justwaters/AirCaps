@@ -65,7 +65,7 @@ struct MenuBarIcon: View {
     private var iconName: String {
         switch noiseMode.status {
         case .idle(.some(let mode)): return mode.isLEDOn ? "ear.fill" : "waveform"
-        case .idle(nil): return "questionmark.circle"
+        case .idle(nil): return "airpodspro"
         case .transitioning: return "arrow.triangle.2.circlepath"
         }
     }
