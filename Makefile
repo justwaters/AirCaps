@@ -6,20 +6,19 @@ BUILD_DIR = .build
 DMG_NAME = $(APP_NAME).dmg
 DMG_STAGING = .dmg-staging
 
-# Signing. Default is ad hoc ("-"), which works locally but is blocked by
-# Gatekeeper on other Macs. For a release, build with the Developer ID
-# identity, then notarize:
-#   make dmg SIGN_IDENTITY="Developer ID Application: Justin Waters (ZM89DBVX2V)"
-#   make notarize
+# Signing. The default is ad hoc ("-"), which works locally but is blocked by
+# Gatekeeper on other Macs. `make dist` builds the release DMG: Developer ID
+# signed (hardened runtime), notarized through Xcode's signed-in Apple ID and
+# stapled, with no extra credentials to set up.
 SIGN_IDENTITY ?= -
-NOTARY_PROFILE ?= AirCaps
+DEVELOPER_ID ?= Developer ID Application: Justin Waters (ZM89DBVX2V)
 ifeq ($(SIGN_IDENTITY),-)
 CODESIGN_FLAGS = --force --sign -
 else
 CODESIGN_FLAGS = --force --options runtime --timestamp --sign "$(SIGN_IDENTITY)"
 endif
 
-.PHONY: all build clean install uninstall release bundle bundle-install bundle-uninstall dmg notarize
+.PHONY: all build clean install uninstall release bundle bundle-install bundle-uninstall dmg package dist
 
 all: build
 
@@ -63,7 +62,10 @@ bundle-uninstall:
 
 # Packages the .app bundle into a distributable .dmg with a symlink to
 # /Applications, for attaching to GitHub releases.
-dmg: bundle
+dmg: bundle package
+
+# Packages the existing $(MENUBAR_APP) without rebuilding it.
+package:
 	rm -rf $(DMG_STAGING) $(DMG_NAME)
 	mkdir -p $(DMG_STAGING)
 	cp -R $(MENUBAR_APP) $(DMG_STAGING)/
@@ -74,9 +76,8 @@ ifneq ($(SIGN_IDENTITY),-)
 	codesign --force --timestamp --sign "$(SIGN_IDENTITY)" $(DMG_NAME)
 endif
 
-# Submits the DMG to Apple's notary service and staples the ticket. Needs a
-# keychain profile created once with:
-#   xcrun notarytool store-credentials AirCaps --apple-id <id> --team-id ZM89DBVX2V
-notarize:
-	xcrun notarytool submit $(DMG_NAME) --keychain-profile $(NOTARY_PROFILE) --wait
-	xcrun stapler staple $(DMG_NAME)
+# Release build: signed + notarized + stapled app, packaged into a signed DMG.
+dist:
+	$(MAKE) bundle SIGN_IDENTITY="$(DEVELOPER_ID)"
+	SIGN_IDENTITY="$(DEVELOPER_ID)" Packaging/notarize.sh $(MENUBAR_APP)
+	$(MAKE) package SIGN_IDENTITY="$(DEVELOPER_ID)"
