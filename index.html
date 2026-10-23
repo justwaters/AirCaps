@@ -309,6 +309,29 @@ code{
   transition: opacity 0.15s ease;
 }
 .btn:hover{ opacity: 0.85; }
+.btn-lg{
+  font-size: 1rem;
+  font-weight: 600;
+  padding: 1rem 2.2rem;
+  border-radius: 6px;
+}
+.btn-lg .sub{
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 400;
+  opacity: 0.65;
+  margin-top: 0.2rem;
+  letter-spacing: 0.03em;
+}
+.dl-note{
+  max-width: 52ch;
+  margin: 1.1rem auto 0;
+  font-family: var(--font-mono);
+  font-size: 0.74rem;
+  line-height: 1.6;
+  color: var(--ink-dim);
+}
+.nav-links .nav-dl{ color: var(--ink); font-weight: 500; }
 .btn-text{
   font-family: var(--font-mono);
   font-size: 0.82rem;
@@ -518,6 +541,7 @@ footer a:hover{ color: var(--ink); }
       <a href="#hid">HID</a>
       <a href="#commands">Commands</a>
       <a href="#status">Status</a>
+      <a class="nav-dl" href="https://github.com/justwaters/AirCaps/releases/latest/download/AirCaps.dmg" download>Download</a>
       <a class="ext" href="https://github.com/justwaters/AirCaps">GitHub</a>
     </div>
   </div>
@@ -543,9 +567,14 @@ footer a:hover{ color: var(--ink); }
     <p class="lede">AirCaps remaps the physical Caps Lock key into a hardware switch for noise mode. LED on is Noise Cancellation. LED off is Adaptive or Transparency, your call &mdash; synced across the built-in keyboard and every Magic Keyboard on your desk.</p>
 
     <div class="cta-row">
-      <a class="btn" href="https://github.com/justwaters/AirCaps">View source</a>
+      <a class="btn btn-lg" id="download" href="https://github.com/justwaters/AirCaps/releases/latest/download/AirCaps.dmg" download>
+        Download for macOS
+        <span class="sub">AirCaps.dmg &middot; macOS 13+</span>
+      </a>
+      <a class="btn-text" href="https://github.com/justwaters/AirCaps">View source</a>
       <a class="btn-text" href="#mechanism">See how it works &darr;</a>
     </div>
+    <p class="dl-note">Open the DMG and drag AirCaps to Applications. The app is ad-hoc signed, so on first launch right-click it and choose Open.</p>
   </header>
 
   <section id="mechanism" class="section">
@@ -703,28 +732,28 @@ footer a:hover{ color: var(--ink); }
     <div class="wrap">
       <div class="section-head">
         <span class="eyebrow">Setup</span>
-        <h2>From clone to lit LED.</h2>
+        <h2>From download to lit LED.</h2>
       </div>
       <ol class="steps">
         <li class="step">
           <span class="step-num">01</span>
           <div class="step-body">
-            <h3>Build the CLI</h3>
-            <p><code>make install</code> &mdash; builds a release binary and copies it to <code>/usr/local/bin/aircaps</code>.</p>
+            <h3>Download the app</h3>
+            <p><a href="https://github.com/justwaters/AirCaps/releases/latest/download/AirCaps.dmg" download>AirCaps.dmg</a> &mdash; drag AirCaps into Applications. Prefer the command line? <code>make install</code> builds the CLI to <code>/usr/local/bin/aircaps</code>.</p>
           </div>
         </li>
         <li class="step">
           <span class="step-num">02</span>
           <div class="step-body">
-            <h3>Bundle the app</h3>
-            <p><code>make bundle-install</code> &mdash; wraps the menu-bar app and installs it to <code>/Applications</code>.</p>
+            <h3>Open it once</h3>
+            <p>Right-click AirCaps and choose Open to get past Gatekeeper &mdash; the app is ad-hoc signed. Building from source: <code>make bundle-install</code>.</p>
           </div>
         </li>
         <li class="step">
           <span class="step-num">03</span>
           <div class="step-body">
             <h3>Grant permissions</h3>
-            <p>Accessibility for the popover, Input Monitoring for the key. The app's menu links straight to both panes.</p>
+            <p>Input Monitoring for the key. Accessibility is only needed if you switch to the Control Center backend in Settings. If AirCaps isn't listed in the pane, add it with the + button.</p>
           </div>
         </li>
         <li class="step">
