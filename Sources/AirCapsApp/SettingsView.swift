@@ -7,51 +7,63 @@ struct SettingsView: View {
     @State private var launchAtLoginEnabled = SMAppService.mainApp.status == .enabled
 
     var body: some View {
-        VStack(spacing: 0) {
+        VStack(alignment: .leading, spacing: 14) {
             header
-            Form {
-                Section {
-                    Picker("When Caps Lock LED is off", selection: $settings.offMode) {
+
+            section("Noise Mode", footer: "LED on always means Noise Cancellation.") {
+                HStack {
+                    Text("When Caps Lock LED is off")
+                    Spacer()
+                    Picker("", selection: $settings.offMode) {
                         ForEach(OffMode.allCases, id: \.self) { mode in
                             Text(mode.displayName).tag(mode)
                         }
                     }
-                    .pickerStyle(.radioGroup)
-                } header: {
-                    Text("Noise Mode")
-                } footer: {
-                    Text("LED on always means Noise Cancellation.")
+                    .pickerStyle(.segmented)
+                    .labelsHidden()
+                    .fixedSize()
                 }
+                .padding(10)
+            }
 
-                Section {
-                    Picker("Switch noise mode using", selection: $settings.backendChoice) {
+            section(
+                "Backend",
+                footer: "The CoreAudio backend uses an undocumented macOS API; switch to Control Center if it stops working."
+            ) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Switch noise mode using")
+                    Picker("", selection: $settings.backendChoice) {
                         ForEach(BackendChoice.allCases, id: \.self) { choice in
                             Text(choice.displayName).tag(choice)
                         }
                     }
                     .pickerStyle(.radioGroup)
-                } header: {
-                    Text("Backend")
-                } footer: {
-                    Text("The CoreAudio backend uses an undocumented macOS API; switch to Control Center if it stops working.")
+                    .labelsHidden()
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(10)
+            }
 
-                Section("Startup") {
-                    Toggle("Launch at Login", isOn: $launchAtLoginEnabled)
-                        .onChange(of: launchAtLoginEnabled) { newValue in
-                            do {
-                                if newValue {
-                                    try SMAppService.mainApp.register()
-                                } else {
-                                    try SMAppService.mainApp.unregister()
-                                }
-                            } catch {
-                                launchAtLoginEnabled = SMAppService.mainApp.status == .enabled
+            section("Startup") {
+                Toggle("Launch at Login", isOn: $launchAtLoginEnabled)
+                    .toggleStyle(.switch)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(10)
+                    .onChange(of: launchAtLoginEnabled) { newValue in
+                        do {
+                            if newValue {
+                                try SMAppService.mainApp.register()
+                            } else {
+                                try SMAppService.mainApp.unregister()
                             }
+                        } catch {
+                            launchAtLoginEnabled = SMAppService.mainApp.status == .enabled
                         }
-                }
+                    }
+            }
 
-                Section {
+            section("Permissions") {
+                VStack(spacing: 0) {
                     permissionRow(
                         "Accessibility",
                         detail: permissions.accessibilityRequired ? nil : "Not needed with the CoreAudio backend",
@@ -59,19 +71,20 @@ struct SettingsView: View {
                     ) {
                         permissions.requestAccessibility()
                     }
+                    Divider()
                     permissionRow("Input Monitoring", detail: "Needed to capture Caps Lock", state: permissions.inputMonitoring) {
                         permissions.openInputMonitoringSettings()
                     }
-                } header: {
-                    Text("Permissions")
-                } footer: {
-                    Button("Re-check Permissions") { permissions.refresh() }
-                        .buttonStyle(.link)
                 }
             }
-            .formStyle(.grouped)
+
+            Button("Re-check Permissions") { permissions.refresh() }
+                .buttonStyle(.link)
+                .frame(maxWidth: .infinity, alignment: .trailing)
         }
+        .padding(20)
         .frame(width: 420)
+        .fixedSize(horizontal: true, vertical: true)
         .onAppear { permissions.refresh() }
     }
 
@@ -86,12 +99,29 @@ struct SettingsView: View {
                 .foregroundColor(.secondary)
         }
         .frame(maxWidth: .infinity)
-        .padding(.top, 20)
-        .padding(.bottom, 4)
     }
 
     private var version: String {
         Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "dev"
+    }
+
+    /// Titled card with an optional right-aligned footnote underneath.
+    private func section<Content: View>(
+        _ title: String, footer: String? = nil, @ViewBuilder content: () -> Content
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(title).font(.headline)
+            content()
+                .background(Color(nsColor: .controlBackgroundColor))
+                .clipShape(RoundedRectangle(cornerRadius: 8))
+            if let footer {
+                Text(footer)
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                    .multilineTextAlignment(.trailing)
+                    .frame(maxWidth: .infinity, alignment: .trailing)
+            }
+        }
     }
 
     private func permissionRow(
@@ -113,5 +143,6 @@ struct SettingsView: View {
                 Button("Grant…", action: action)
             }
         }
+        .padding(10)
     }
 }
