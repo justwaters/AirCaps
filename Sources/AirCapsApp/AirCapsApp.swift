@@ -59,16 +59,42 @@ struct MenuBarIcon: View {
     @ObservedObject var noiseMode: NoiseModeController
 
     var body: some View {
-        Image(systemName: iconName)
+        switch noiseMode.status {
+        case .idle(.some(let mode)):
+            modeImage(mode)
+        case .idle(nil):
+            Image(systemName: "airpodspro")
+        case .disconnected:
+            Image(systemName: "hand.tap")
+        case .transitioning(_, let to):
+            // Show the target mode while switching rather than a spinner glyph.
+            modeImage(to)
+        }
     }
 
-    private var iconName: String {
-        switch noiseMode.status {
-        case .idle(.some(let mode)): return mode.isLEDOn ? "ear.fill" : "waveform"
-        case .idle(nil): return "airpodspro"
-        case .disconnected: return "hand.tap"
-        case .transitioning: return "arrow.triangle.2.circlepath"
+    /// The bundled vector icon for a mode (template, so it follows the menu
+    /// bar's light/dark appearance); SF Symbol fallback when run unbundled.
+    @ViewBuilder
+    private func modeImage(_ mode: NoiseMode) -> some View {
+        if let image = Self.icon(for: mode) {
+            Image(nsImage: image)
+        } else {
+            Image(systemName: mode.isLEDOn ? "ear.fill" : "waveform")
         }
+    }
+
+    private static let iconHeight: CGFloat = 17
+    private static var cache: [NoiseMode: NSImage] = [:]
+
+    private static func icon(for mode: NoiseMode) -> NSImage? {
+        if let cached = cache[mode] { return cached }
+        guard let url = Bundle.main.url(forResource: "MenuIcon-\(mode.rawValue)", withExtension: "pdf"),
+              let image = NSImage(contentsOf: url), image.size.height > 0
+        else { return nil }
+        image.size = NSSize(width: image.size.width * iconHeight / image.size.height, height: iconHeight)
+        image.isTemplate = true
+        cache[mode] = image
+        return image
     }
 }
 
