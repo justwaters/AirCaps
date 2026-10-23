@@ -4,6 +4,7 @@ import SwiftUI
 struct SettingsView: View {
     @ObservedObject var settings: SettingsStore
     @ObservedObject var permissions: PermissionsGate
+    @AppStorage(SettingsStore.showMenuBarIconKey) private var showMenuBarIcon = true
     @State private var launchAtLoginEnabled = SMAppService.mainApp.status == .enabled
 
     var body: some View {
@@ -60,6 +61,16 @@ struct SettingsView: View {
                             launchAtLoginEnabled = SMAppService.mainApp.status == .enabled
                         }
                     }
+            }
+
+            section(
+                "Menu Bar",
+                footer: "When hidden, launch AirCaps again (Spotlight or Finder) to open Settings. Caps Lock keeps working."
+            ) {
+                Toggle("Show menu bar icon", isOn: $showMenuBarIcon)
+                    .toggleStyle(.switch)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(10)
             }
 
             section("Permissions") {

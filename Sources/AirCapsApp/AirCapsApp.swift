@@ -109,9 +109,10 @@ struct MenuBarIcon: View {
 @main
 struct AirCapsApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
+    @AppStorage(SettingsStore.showMenuBarIconKey) private var showMenuBarIcon = true
 
     var body: some Scene {
-        MenuBarExtra {
+        MenuBarExtra(isInserted: $showMenuBarIcon) {
             MenuContent(
                 noiseMode: appDelegate.noiseMode,
                 settings: appDelegate.settings,
