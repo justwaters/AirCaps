@@ -36,6 +36,8 @@ bundle: release
 	mkdir -p $(MENUBAR_APP)/Contents/MacOS
 	cp $(BUILD_DIR)/release/$(MENUBAR_TARGET) $(MENUBAR_APP)/Contents/MacOS/$(APP_NAME)
 	cp Packaging/Info.plist $(MENUBAR_APP)/Contents/Info.plist
+	mkdir -p $(MENUBAR_APP)/Contents/Resources
+	cp Packaging/AppIcon.icns $(MENUBAR_APP)/Contents/Resources/AppIcon.icns
 	codesign --force --sign - $(MENUBAR_APP)
 
 bundle-install: bundle
