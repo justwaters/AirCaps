@@ -103,6 +103,17 @@ public final class NoiseModeController: ObservableObject {
         beginTransition(to: target, from: current)
     }
 
+    /// Playback-driven change. Quietly does nothing if a change is in flight, the
+    /// AirPods are away, or they are already where they should be. `ifCurrently`
+    /// limits it to a source mode, so pausing doesn't override a hand-picked
+    /// Transparency or Adaptive.
+    public func autoSwitch(to target: NoiseMode, ifCurrently source: NoiseMode? = nil) {
+        refreshFromDevice()
+        guard case .idle(let current) = status, current != target else { return }
+        if let source, let current, current != source { return }
+        beginTransition(to: target, from: current)
+    }
+
     private func beginTransition(to target: NoiseMode, from current: NoiseMode?) {
         status = .transitioning(from: current, to: target)
         lastError = nil

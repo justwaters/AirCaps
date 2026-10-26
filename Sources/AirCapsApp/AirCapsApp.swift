@@ -13,6 +13,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         offMode: { [weak self] in self?.settings.offMode.asNoiseMode ?? .adaptive },
         backend: { [weak self] in (self?.settings.backendChoice ?? .hal).backend }
     )
+    private let playback = PlaybackMonitor()
     private var cancellables = Set<AnyCancellable>()
 
     override init() {
@@ -45,6 +46,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.accessory)
+        playback.onPlay = { [weak self] in
+            guard let self, self.settings.switchOnPlay else { return }
+            self.noiseMode.autoSwitch(to: .noiseCancellation)
+        }
+        playback.onPause = { [weak self] in
+            guard let self, self.settings.switchOnPause else { return }
+            self.noiseMode.autoSwitch(to: self.settings.offMode.asNoiseMode, ifCurrently: .noiseCancellation)
+        }
+        playback.start()
         permissions.refresh()
     }
 

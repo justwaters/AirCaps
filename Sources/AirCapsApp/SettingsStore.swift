@@ -40,6 +40,18 @@ public final class SettingsStore: ObservableObject {
     private enum Keys {
         static let offMode = "offMode"
         static let backend = "backend"
+        static let switchOnPause = "switchOnPause"
+        static let switchOnPlay = "switchOnPlay"
+    }
+
+    /// When audio stops on the AirPods, switch to the off-mode (Adaptive/Transparency).
+    @Published public var switchOnPause: Bool {
+        didSet { UserDefaults.standard.set(switchOnPause, forKey: Keys.switchOnPause) }
+    }
+
+    /// When audio starts on the AirPods, switch to Noise Cancellation.
+    @Published public var switchOnPlay: Bool {
+        didSet { UserDefaults.standard.set(switchOnPlay, forKey: Keys.switchOnPlay) }
     }
 
     @Published public var backendChoice: BackendChoice {
@@ -55,6 +67,8 @@ public final class SettingsStore: ObservableObject {
     }
 
     public init() {
+        switchOnPause = UserDefaults.standard.bool(forKey: Keys.switchOnPause)
+        switchOnPlay = UserDefaults.standard.bool(forKey: Keys.switchOnPlay)
         let stored = UserDefaults.standard.string(forKey: Keys.offMode)
         offMode = stored.flatMap(OffMode.init(rawValue:)) ?? .adaptive
         backendChoice = UserDefaults.standard.string(forKey: Keys.backend)

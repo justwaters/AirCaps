@@ -28,6 +28,23 @@ struct SettingsView: View {
             }
 
             section(
+                "Playback",
+                footer: "Follows audio playing through your AirPods. Pausing only changes Noise Cancellation."
+            ) {
+                VStack(spacing: 0) {
+                    Toggle("Switch to \(settings.offMode.displayName) when playback pauses", isOn: $settings.switchOnPause)
+                        .toggleStyle(.switch)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(10)
+                    Divider()
+                    Toggle("Switch to Noise Cancellation when playback starts", isOn: $settings.switchOnPlay)
+                        .toggleStyle(.switch)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(10)
+                }
+            }
+
+            section(
                 "Backend",
                 footer: "The CoreAudio backend uses an undocumented macOS API; switch to Control Center if it stops working."
             ) {
