@@ -5,8 +5,10 @@ import Foundation
 /// Reports when audio starts or stops playing through the AirPods, using the
 /// output device's "running somewhere" flag. It stays true while any app has
 /// the device open, so a paused player that releases the device reads as
-/// stopped. Both edges are debounced, so a notification sound or a short gap
-/// between tracks doesn't flip the mode.
+/// stopped, but apps can take several seconds to let go. Music and Spotify also
+/// announce play and pause right away, which is used as a faster signal while the
+/// AirPods are the output. Both edges are debounced, so a notification sound or
+/// a short gap between tracks doesn't flip the mode.
 @MainActor
 final class PlaybackMonitor {
     var onPlay: (() -> Void)?
@@ -21,9 +23,54 @@ final class PlaybackMonitor {
     /// What was last reported to the callbacks (or the state at attach time).
     private var reportedPlaying = false
     private var pending: DispatchWorkItem?
+    private var playerObservers: [NSObjectProtocol] = []
+
+    /// Notification name and the userInfo key holding "Playing" / "Paused" / "Stopped".
+    private static let players: [(name: String, stateKey: String)] = [
+        ("com.apple.Music.playerInfo", "Player State"),
+        ("com.spotify.client.PlaybackStateChanged", "Player State"),
+    ]
+    private let playerDelay: TimeInterval = 0.2
+
+    private func observePlayers() {
+        for player in Self.players {
+            let token = DistributedNotificationCenter.default().addObserver(
+                forName: Notification.Name(player.name), object: nil, queue: .main
+            ) { [weak self] note in
+                let state = note.userInfo?[player.stateKey] as? String
+                MainActor.assumeIsolated { self?.playerChanged(state: state) }
+            }
+            playerObservers.append(token)
+        }
+    }
+
+    /// Only counts while the AirPods are where the sound goes, so a player
+    /// pausing on the speakers doesn't change the AirPods' mode.
+    private func playerChanged(state: String?) {
+        guard let state, deviceID != nil, let output = getDefaultOutputDevice(), output == deviceID else { return }
+        schedule(playing: state == "Playing", after: playerDelay) { [weak self] in
+            // Still the same state a moment later, and AirPods still the output.
+            self?.deviceID != nil && getDefaultOutputDevice() == self?.deviceID
+        }
+    }
+
+    private func schedule(playing: Bool, after delay: TimeInterval, stillValid: @escaping @MainActor () -> Bool) {
+        pending?.cancel()
+        guard playing != reportedPlaying else { return }
+        let item = DispatchWorkItem { [weak self] in
+            MainActor.assumeIsolated {
+                guard let self, stillValid(), playing != self.reportedPlaying else { return }
+                self.reportedPlaying = playing
+                if playing { self.onPlay?() } else { self.onPause?() }
+            }
+        }
+        pending = item
+        DispatchQueue.main.asyncAfter(deadline: .now() + delay, execute: item)
+    }
 
     func start() {
         guard devicesListener == nil else { return }
+        observePlayers()
         var address = AudioObjectPropertyAddress(
             mSelector: kAudioHardwarePropertyDevices,
             mScope: kAudioObjectPropertyScopeGlobal,
@@ -38,6 +85,8 @@ final class PlaybackMonitor {
     }
 
     func stop() {
+        for token in playerObservers { DistributedNotificationCenter.default().removeObserver(token) }
+        playerObservers = []
         detach()
         guard let block = devicesListener else { return }
         var address = AudioObjectPropertyAddress(
@@ -80,20 +129,11 @@ final class PlaybackMonitor {
 
     private func runningChanged() {
         guard let id = deviceID else { return }
-        pending?.cancel()
         let running = Self.isRunning(id)
-        guard running != reportedPlaying else { return }
-        let item = DispatchWorkItem { [weak self] in
-            MainActor.assumeIsolated {
-                guard let self, let id = self.deviceID,
-                      Self.isRunning(id) == running, running != self.reportedPlaying
-                else { return }
-                self.reportedPlaying = running
-                if running { self.onPlay?() } else { self.onPause?() }
-            }
+        schedule(playing: running, after: running ? playDelay : pauseDelay) { [weak self] in
+            guard let id = self?.deviceID else { return false }
+            return Self.isRunning(id) == running
         }
-        pending = item
-        DispatchQueue.main.asyncAfter(deadline: .now() + (running ? playDelay : pauseDelay), execute: item)
     }
 
     private static var runningAddress: AudioObjectPropertyAddress {
