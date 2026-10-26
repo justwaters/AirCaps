@@ -12,8 +12,8 @@ final class PlaybackMonitor {
     var onPlay: (() -> Void)?
     var onPause: (() -> Void)?
 
-    private let playDelay: TimeInterval = 0.5
-    private let pauseDelay: TimeInterval = 2.0
+    private let playDelay: TimeInterval = 0.3
+    private let pauseDelay: TimeInterval = 1.0
 
     private var deviceID: AudioDeviceID?
     private var runningListener: AudioObjectPropertyListenerBlock?

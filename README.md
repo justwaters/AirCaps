@@ -224,7 +224,7 @@ make bundle-uninstall
 
 Launch `AirCaps.app` from `/Applications` (or Spotlight) — it runs as a menu-bar-only app with no Dock icon. Open its **Settings…** to choose Adaptive vs. Transparency for the LED-off state and to enable Launch at Login.
 
-Two optional **Playback** switches in Settings (both off by default) follow audio on your AirPods: one switches to your LED-off mode when playback pauses, the other switches to Noise Cancellation when it starts. Pausing only changes Noise Cancellation, so a Transparency or Adaptive mode you picked by hand stays put. Playback is detected from whether any app is sending audio to the AirPods; pauses are confirmed for 2 seconds and starts for half a second, so a notification sound or a gap between tracks doesn't flip the mode.
+Two optional **Playback** switches in Settings (both off by default) follow audio on your AirPods: one switches to your LED-off mode when playback pauses, the other switches to Noise Cancellation when it starts. Pausing only changes Noise Cancellation, so a Transparency or Adaptive mode you picked by hand stays put. Playback is detected from whether any app is sending audio to the AirPods; pauses are confirmed for 1 second and starts for 0.3 seconds, so a notification sound or a gap between tracks doesn't flip the mode.
 
 ### Updates
 
